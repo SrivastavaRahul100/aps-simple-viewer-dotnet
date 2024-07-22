@@ -8,24 +8,22 @@ using Autodesk.Oss.Model;
 public partial class APS
 {
     private async Task EnsureBucketExists(string bucketKey)
-    {
-        const string region = "US";
-        var auth = await GetInternalToken();
+    {        var auth = await GetInternalToken();
         var ossClient = new OssClient(_sdkManager);
         try
         {
-            await ossClient.GetBucketDetailsAsync(bucketKey, accessToken: auth.AccessToken);
+            await ossClient.GetBucketDetailsAsync(accessToken: auth.AccessToken,bucketKey);
         }
         catch (OssApiException ex)
         {
             if (ex.HttpResponseMessage.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
-                var payload = new CreateBucketsPayload
+                var bucketsPayload = new CreateBucketsPayload
                 {
                     BucketKey = bucketKey,
-                    PolicyKey = "persistent"
+                   PolicyKey = PolicyKey.Persistent
                 };
-                await ossClient.CreateBucketAsync(region, payload, auth.AccessToken);
+                await ossClient.CreateBucketAsync(auth.AccessToken,Region.US, bucketsPayload);
             }
             else
             {
@@ -39,7 +37,7 @@ public partial class APS
         await EnsureBucketExists(_bucket);
         var auth = await GetInternalToken();
         var ossClient = new OssClient(_sdkManager);
-        var objectDetails = await ossClient.Upload(_bucket, objectName, pathToFile, auth.AccessToken, new System.Threading.CancellationToken());
+        var objectDetails = await ossClient.Upload(_bucket, objectName, pathToFile, accessToken:auth.AccessToken, new System.Threading.CancellationToken());
         return objectDetails;
     }
 
@@ -50,12 +48,12 @@ public partial class APS
         var ossClient = new OssClient(_sdkManager);
         const int PageSize = 64;
         var results = new List<ObjectDetails>();
-        var response = await ossClient.GetObjectsAsync(_bucket, PageSize, accessToken: auth.AccessToken);
+        var response = await ossClient.GetObjectsAsync(auth.AccessToken,_bucket, PageSize);
         results.AddRange(response.Items);
         while (!string.IsNullOrEmpty(response.Next))
         {
             var queryParams = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(new Uri(response.Next).Query);
-            response = await ossClient.GetObjectsAsync(_bucket, PageSize, startAt: queryParams["startAt"], accessToken: auth.AccessToken);
+            response = await ossClient.GetObjectsAsync(auth.AccessToken ,_bucket, PageSize, startAt: queryParams["startAt"]);
             results.AddRange(response.Items);
         }
         return results;

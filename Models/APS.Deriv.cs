@@ -25,9 +25,9 @@ public partial class APS
             },
             Output = new JobPayloadOutput
             {
-                Formats = new List<JobPayloadFormat>
+                Formats = new List<IJobPayloadFormat>
                 {
-                    new JobSvf2OutputFormat
+                    new JobPayloadFormatSVF2
                     {
                         Views = new List<View>
                         {
@@ -35,10 +35,6 @@ public partial class APS
                             View._3d
                         }
                     }
-                },
-                Destination = new JobPayloadOutputDestination()
-                {
-                    Region = Region.US
                 }
             }
         };
@@ -57,7 +53,7 @@ public partial class APS
         var modelDerivativeClient = new ModelDerivativeClient(_sdkManager);
         try
         {
-            var manifest = await modelDerivativeClient.GetManifestAsync(urn, accessToken: auth.AccessToken);
+            var manifest = await modelDerivativeClient.GetManifestAsync( accessToken: auth.AccessToken,urn);
             var messages = new List<string>();
             // TODO: collect messages from manifest
             return new TranslationStatus(manifest.Status, manifest.Progress, messages);
